@@ -139,3 +139,40 @@ def create_reservation():
         check_in=check_in.isoformat(),
         check_out=check_out.isoformat(),
     ), 201
+
+
+@api.post("/reservations/lookup")
+def get_reservation():
+    """Look up a booking with its reference and the guest email used to create it."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error={"code": "invalid_json", "message": "A JSON object is required"}), 400
+    booking_reference = payload.get("booking_reference")
+    email = payload.get("guest_email")
+    if not isinstance(booking_reference, str) or not booking_reference.strip():
+        return jsonify(
+            error={"code": "missing_reference", "message": "Booking reference is required"}
+        ), 400
+    if not isinstance(email, str) or not email.strip():
+        return jsonify(error={"code": "missing_email", "message": "Guest email is required"}), 400
+    booking_reference = booking_reference.strip().upper()
+    email = email.strip().lower()
+
+    reservation = db.session.scalar(
+        select(Reservation).where(
+            Reservation.booking_reference == booking_reference,
+            Reservation.guest_email == email,
+        )
+    )
+    if reservation is None:
+        return jsonify(error={"code": "reservation_not_found", "message": "Booking not found"}), 404
+
+    return jsonify(
+        booking_reference=reservation.booking_reference,
+        status=reservation.status,
+        guest_name=reservation.guest_name,
+        room_number=reservation.room.room_number,
+        room_type=reservation.room.room_type,
+        check_in=reservation.check_in.isoformat(),
+        check_out=reservation.check_out.isoformat(),
+    ), 200

@@ -40,6 +40,24 @@ def test_reservation_has_unique_reference_and_persists(client, app, reservation_
         assert db.session.query(Reservation).count() == 2
 
 
+def test_reservation_can_be_retrieved_with_reference_and_email(client, reservation_payload):
+    created = client.post("/api/reservations", json=reservation_payload)
+    reference = created.json["booking_reference"]
+
+    lookup = {"booking_reference": reference, "guest_email": "ADA@EXAMPLE.TEST"}
+    found = client.post("/api/reservations/lookup", json=lookup)
+    assert found.status_code == 200
+    assert found.json["booking_reference"] == reference
+    assert found.json["guest_name"] == reservation_payload["guest_name"]
+    assert found.json["room_type"] == "standard"
+
+    hidden = client.post(
+        "/api/reservations/lookup",
+        json={"booking_reference": reference, "guest_email": "someone@example.test"},
+    )
+    assert hidden.status_code == 404
+
+
 def test_no_room_returns_conflict(client, reservation_payload):
     assert client.post("/api/reservations", json=reservation_payload).status_code == 201
     assert client.post("/api/reservations", json=reservation_payload).status_code == 201

@@ -2,8 +2,9 @@
 
 ```mermaid
 flowchart TB
-    Client[Client / PowerShell / curl] -->|TLS 1.2 or 1.3| Nginx
-    Nginx -->|HTTP on private bridge| Flask[Flask API in Gunicorn]
+    Browser[Staywell browser frontend] -->|TLS 1.2 or 1.3| Nginx
+    Nginx -->|static files| Frontend[HTML / CSS / JavaScript]
+    Nginx -->|/api over private bridge| Flask[Flask API in Gunicorn]
     Flask --> SQLAlchemy
     SQLAlchemy --> PostgreSQL[(PostgreSQL 16 + named volume)]
     Seed[Idempotent seed command] --> PostgreSQL
@@ -17,7 +18,7 @@ flowchart TB
 
 ## Request and concurrency flow
 
-1. Nginx redirects plain HTTP to HTTPS and forwards TLS requests to the API on the internal Compose bridge.
+1. Nginx redirects plain HTTP to HTTPS, serves the static Staywell frontend, and forwards `/api/` requests to Flask over the internal Compose bridge.
 2. Flask validates JSON, date format, date ordering, guest fields, and room type.
 3. SQLAlchemy queries for a room with no confirmed reservation whose stay intersects the requested interval.
 4. The API inserts a reservation in a PostgreSQL transaction.
@@ -32,3 +33,4 @@ This uses half-open stays `[check_in, check_out)`: overlap is `existing.check_in
 - `.env` provides local configuration and is ignored by Git. GitHub-hosted CI uses a disposable test password and the workflow token for GHCR. Never put a production credential in source, a workflow literal, or an image layer.
 - Health checks distinguish process liveness (`/health`) from database readiness (`/ready`).
 - Logs are JSON lines on stdout/stderr for Docker collection.
+- The sample frontend catalogue supplies illustrative property text, images, and prices. Availability and reservations are backed by PostgreSQL. Booking lookup accepts the reference and guest email in a JSON POST body to keep the email out of the URL.

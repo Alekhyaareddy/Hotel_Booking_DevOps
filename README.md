@@ -1,13 +1,14 @@
-# Hotel Booking API
+# Staywell Hotel Booking Demo
 
-A small Flask API for checking hotel room availability and reserving a room. It is designed to demonstrate backend, database, container, CI/CD, and local operations practices. It is an API project, not a complete booking website.
+A small responsive hotel discovery and booking demo backed by a Flask API, PostgreSQL, Docker Compose, and Nginx HTTPS. Search the sample catalogue, check room availability, create a real reservation, and retrieve a booking using its reference and guest email. This demo does not take payments.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    C[API client] -->|HTTPS| N[Nginx]
-    N -->|private Compose network| A[Flask + Gunicorn]
+    C[Browser] -->|HTTPS| N[Nginx: frontend + API proxy]
+    N -->|/api requests on private network| A[Flask + Gunicorn]
+    N -->|static assets| F[Staywell frontend]
     A --> S[SQLAlchemy]
     S --> P[(PostgreSQL + persistent volume)]
     Seed[Repeatable seed command] --> P
@@ -51,7 +52,7 @@ The database enforces the central booking rule with a PostgreSQL GiST exclusion 
    docker compose ps
    ```
 
-   The database becomes healthy first, then the API initializes its schema and starts, then Nginx starts. The PostgreSQL data is kept in the `postgres_data` named volume.
+   The database becomes healthy first, then the API initializes its schema and starts, then Nginx serves the frontend and proxies API calls. The PostgreSQL data is kept in the `postgres_data` named volume.
 
 4. Add the sample room inventory. This command is safe to repeat.
 
@@ -67,6 +68,8 @@ The database enforces the central booking rule with a PostgreSQL GiST exclusion 
    ```
 
    HTTP on port 80 redirects to HTTPS on port 443. The API service itself is only reachable on the private Compose network; PostgreSQL is bound to `127.0.0.1` for local development tools.
+
+6. Open the website in Chrome at **https://localhost**. Use a `mkcert` certificate to avoid browser trust warnings. The homepage shows three sample properties; their locations, descriptions, photos, and nightly rates are illustrative catalogue content. The availability count and all reservations are read from or written to the live PostgreSQL-backed API.
 
 ## API examples
 
@@ -96,6 +99,7 @@ The response includes a booking reference such as `HB-XXXXXXXXXX`. If no room re
 | `GET /ready` | Readiness check, including a PostgreSQL query |
 | `GET /api/availability?check_in=YYYY-MM-DD&check_out=YYYY-MM-DD&room_type=standard` | Available rooms and count |
 | `POST /api/reservations` | Create a confirmed reservation |
+| `POST /api/reservations/lookup` | Retrieve a booking when both the reference and guest email in the JSON body match |
 
 ## Run automated tests
 
@@ -161,6 +165,6 @@ requirements.lock       Exact resolved Python package versions
 
 - This is a learning/demo deployment on one machine, not a highly available production system.
 - `create_all` initializes a fresh schema. For long-lived production evolution, introduce reviewed, versioned Alembic migrations before changing table structure.
-- The API has no login, payment processing, cancellation workflow, rate limiting, or personal-data retention policy; do not expose it publicly as a real booking service.
+- The demo catalogue details and prices are static frontend content and are not stored as hotel records or rates in PostgreSQL. Room availability and reservations are real database operations. The API has no login, payment processing, cancellation workflow, rate limiting, or personal-data retention policy; do not expose it publicly as a real booking service.
 - Local HTTPS certificates are for `localhost`. A public service needs a domain, a trusted certificate lifecycle, external secret management, backups stored off-machine, and a monitored deployment environment.
 - The exclusion constraint is the concurrency-safe guard. The earlier availability query is for a helpful response and does not replace that database rule.

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f6f2" />
+    <meta name="description" content="Find a quieter kind of getaway with Staywell." />
+    <title>Staywell — stays that stay with you</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="Staywell home"><span class="brand-mark">s</span><span>staywell<span class="brand-dot">.</span></span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a class="nav-link active" href="#stays">Find a stay</a>
+        <a class="nav-link" href="#how">Our promise</a>
+      </nav>
+      <button class="my-booking" id="open-booking-lookup" type="button"><span class="ticket-icon">▤</span> My bookings</button>
+      <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+    </header>
+
+    <main id="home">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-photo" role="img" aria-label="Quiet coastal hotel surrounded by palm trees"></div>
+        <div class="hero-shade"></div>
+        <div class="hero-content">
+          <p class="eyebrow light"><span class="eyebrow-line"></span> A little closer to elsewhere</p>
+          <h1 id="hero-title">Find your<br /><em>own kind</em> of away.</h1>
+          <p class="hero-copy">Considered places. Unhurried mornings.<br />The sort of stay you’ll still be thinking about.</p>
+        </div>
+        <div class="hero-caption"><span class="caption-dot"></span> Handpicked stays, made for slowing down</div>
+      </section>
+
+      <section class="search-wrap" aria-label="Search hotel stays">
+        <form class="search-panel" id="search-form">
+          <label class="search-field destination-field">
+            <span class="field-icon">⌖</span><span class="field-stack"><span class="field-label">Where to?</span><input id="destination" name="destination" type="search" placeholder="City, region or hotel" value="" autocomplete="off" /></span>
+          </label>
+          <label class="search-field">
+            <span class="field-icon">▦</span><span class="field-stack"><span class="field-label">Check in</span><input id="check-in" name="check_in" type="date" required /></span>
+          </label>
+          <label class="search-field">
+            <span class="field-icon">▦</span><span class="field-stack"><span class="field-label">Check out</span><input id="check-out" name="check_out" type="date" required /></span>
+          </label>
+          <button class="search-button" type="submit"><span>Explore stays</span><span aria-hidden="true">↗</span></button>
+        </form>
+      </section>
+
+      <section class="intro-section" id="stays">
+        <div class="section-heading">
+          <div><p class="eyebrow"><span class="eyebrow-line"></span> A good place to begin</p><h2 id="results-title">Somewhere<br /><em>worth going.</em></h2></div>
+          <p class="section-intro">Small collection, considered carefully. Each stay has its own pace, its own point of view, and room to make the trip yours.</p>
+        </div>
+        <div class="results-bar"><p id="result-summary">Our little collection</p><span class="curated-label">A considered collection</span></div>
+        <div class="hotel-grid" id="hotel-grid" aria-live="polite"></div>
+        <div class="empty-state" id="empty-state" hidden><div class="empty-mark">⌕</div><h3>No stays found just yet</h3><p>Try another destination or check a different set of dates.</p><button class="text-button" id="clear-search" type="button">See all stays <span>→</span></button></div>
+        <p class="catalog-note">Property details and nightly rates are sample catalogue information for this local demo. Availability and reservations are checked and saved by the live API.</p>
+      </section>
+
+      <section class="promise-section" id="how">
+        <div class="promise-image" role="img" aria-label="Sunlit hotel terrace overlooking the ocean"></div>
+        <div class="promise-copy"><p class="eyebrow light"><span class="eyebrow-line"></span> The Staywell way</p><h2>Less scrolling.<br /><em>More arriving.</em></h2><p>We believe the best trips begin before you unpack. A thoughtful room, a place with a pulse, and the freedom to do nothing at all.</p><a class="promise-link" href="#stays">Find your place <span>↗</span></a></div>
+      </section>
+
+      <section class="newsletter-section"><div><p class="eyebrow"><span class="eyebrow-line"></span> Notes from elsewhere</p><h2>A little inspiration<br />for the <em>in-between.</em></h2></div><p>Slow travel stories, quiet corners, and good places to wake up. No noise, just the occasional note.</p><a href="#stays" class="outline-button">Explore the collection <span>↗</span></a></section>
+    </main>
+
+    <footer class="site-footer"><a class="brand footer-brand" href="#home"><span class="brand-mark">s</span><span>staywell<span class="brand-dot">.</span></span></a><p>Good places. Better pauses.</p><span>© 2026 Staywell Local Demo</span></footer>
+
+    <dialog class="modal" id="hotel-modal" aria-labelledby="modal-title"><button class="modal-close" type="button" aria-label="Close">×</button><div id="hotel-modal-content"></div></dialog>
+    <dialog class="modal booking-modal" id="booking-modal" aria-labelledby="booking-title"><button class="modal-close" type="button" aria-label="Close">×</button><div id="booking-modal-content"></div></dialog>
+    <dialog class="modal lookup-modal" id="lookup-modal" aria-labelledby="lookup-title"><button class="modal-close" type="button" aria-label="Close">×</button><div id="lookup-modal-content"></div></dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
