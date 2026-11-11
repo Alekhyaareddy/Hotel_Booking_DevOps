@@ -1,0 +1,85 @@
+services:
+  db:
+    image: postgres:16.9-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hotel_booking}
+      POSTGRES_USER: ${POSTGRES_USER:-hotel_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks: [backend]
+
+  api:
+    image: ${IMAGE_NAME:-hotel-booking-api}:${IMAGE_TAG:-local}
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://hotel_app:change-this-local-password@db:5432/hotel_booking}
+      APP_VERSION: ${APP_VERSION:-local}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    networks: [backend]
+
+  nginx:
+    image: nginx:1.28.0-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/nginx-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks: [backend]
+
+  tests:
+    image: python:3.12.10-slim-bookworm
+    profiles: [test]
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:ro
+      - test_pip_cache:/root/.cache/pip
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONPATH: /workspace
+      PYTEST_ADDOPTS: "-p no:cacheprovider"
+      RUFF_CACHE_DIR: /tmp/ruff_cache
+      TEST_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-hotel_app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/hotel_booking_test
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "python -m pip install -r requirements-dev.txt && ruff check --no-cache . && ruff format --check . && pytest -q"]
+    networks: [backend]
+
+volumes:
+  postgres_data:
+  test_pip_cache:
+
+networks:
+  backend:
+    driver: bridge
