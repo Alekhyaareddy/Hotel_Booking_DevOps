@@ -19,6 +19,8 @@ flowchart LR
 
 The database enforces the central booking rule with a PostgreSQL GiST exclusion constraint. It rejects two confirmed stays for the same room when their date ranges overlap, including writes racing from separate API workers. Date ranges include check-in and exclude check-out, so one guest can leave on the day the next arrives.
 
+See [the architecture notes](docs/architecture.md) and [database schema diagram](docs/database-schema.md) for the service and data diagrams.
+
 ## Requirements
 
 - Docker Desktop with Docker Compose, or Docker Engine plus the Compose plugin.
@@ -112,7 +114,7 @@ docker compose exec db createdb -U hotel_app hotel_booking_test
 docker compose --profile test run --rm tests
 ```
 
-The test fixture clears tables only in `hotel_booking_test`, not in the demo database. The GitHub Actions workflow provisions its own temporary PostgreSQL service. The tests check health/readiness, room-type availability, references, persistence, invalid dates, adjacent dates, full inventory, and the database overlap constraint itself. A successful test run should be reported only after seeing its actual output.
+The test fixture clears tables only in `hotel_booking_test`, not in the demo database. The GitHub Actions workflow provisions its own temporary PostgreSQL service. The tests check health/readiness, room-type availability, references, persistence, invalid dates (including checkout before check-in), unknown room types, adjacent dates, full inventory, direct database overlap protection, and simultaneous conflicting requests. See the saved [isolated test output](docs/evidence/api-tests.txt).
 
 To run the test suite directly on the host, create a Python 3.12 virtual environment and set `TEST_DATABASE_URL` to the isolated test database as shown in the workflow. The container test runner is the simpler Windows path.
 
@@ -145,7 +147,7 @@ Repository Actions must be allowed to write packages (`GITHUB_TOKEN` package per
 
 ## Backup, restore, recovery, and rollback
 
-See [the operations runbook](docs/operations-runbook.md) for tested command sequences, retention guidance, restart/recovery steps, and rollback using an immutable image tag.
+See [the operations runbook](docs/runbook.md) for deployment, backup/restore, recovery, and rollback procedures. Verified local runtime and recovery results are in [docs/evidence](docs/evidence/README.md).
 
 For interview preparation, see [the project explanation guide](docs/interview-guide.md) and [the 3–5 minute demo script](docs/demo-script.md).
 

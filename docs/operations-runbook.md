@@ -34,6 +34,23 @@ Get-FileHash ./backups/hotel_booking.dump -Algorithm SHA256
 
 For repeatable operations, add a date to the backup filename and retain multiple generations. A backup is useful only if you periodically test restoring it.
 
+## Verify a restore in a separate database
+
+For a restore drill, create a new, uniquely named database and restore into it. This leaves the live database untouched. Do not use a database name that already contains data.
+
+```powershell
+$restoreDb = 'hotel_booking_restore_test'
+docker compose exec -T db createdb -U hotel_app $restoreDb
+docker compose cp ./backups/hotel_booking.dump db:/tmp/hotel_booking.dump
+docker compose exec -T db pg_restore --no-owner --no-privileges --exit-on-error `
+  -U hotel_app -d $restoreDb /tmp/hotel_booking.dump
+docker compose exec -T db psql -U hotel_app -d $restoreDb -c '\dt'
+docker compose exec -T db psql -U hotel_app -d $restoreDb -tAc `
+  "SELECT 'rooms='||(SELECT count(*) FROM rooms)||', reservations='||(SELECT count(*) FROM reservations)"
+```
+
+Check that the expected tables, rows, and exclusion constraint exist. The local verification evidence also exercises `/ready` and reservation lookup against the restored database. Keep the restore database isolated; drop it only after confirming it contains no needed data.
+
 ## Restore a backup (replaces current database contents)
 
 This is a destructive recovery procedure. Stop the API first so it cannot write while restoring. Copy the chosen archive into the database container, then restore it. `--clean` removes objects that exist in the archive before recreating them.

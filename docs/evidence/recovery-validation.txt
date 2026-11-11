@@ -1,0 +1,16 @@
+Recovery validation | 2026-11-11 22:37 IST
+Checkout commit at start of check: 6821308fb4a0f4872a8667a6e4cc073b7bce5d3d
+
+API failure and recovery:
+- Command: docker compose stop api
+- Observed: API container Exited (0); HTTPS /ready through Nginx returned HTTP 502 while API was stopped.
+- Logs: Gunicorn logged SIGTERM, worker exits, and orderly shutdown.
+- Command: docker compose start api
+- Observed: API container returned to Up (healthy); HTTPS /ready returned {"database":"available","status":"ready"}.
+
+PostgreSQL failure and recovery:
+- Command: docker compose stop db (clean stop; named volume retained)
+- Observed: database container Exited (0); HTTPS /ready returned {"database":"unavailable","status":"not_ready"}, HTTP 503.
+- Command: docker compose start db
+- Observed after recovery: database Up (healthy); API Up (healthy); Nginx Up (healthy); HTTPS /ready returned {"database":"available","status":"ready"}, HTTP 200.
+- No volumes were removed and no database contents were intentionally changed by these stop/start checks.

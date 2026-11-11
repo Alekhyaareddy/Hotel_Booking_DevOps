@@ -1,0 +1,8 @@
+Persistence check | 2026-11-11 22:43:57 +05:30
+API restart command: docker compose restart api
+Counts before restart:
+rooms=6, reservations=1
+Readiness after restart:
+{"database":"available","status":"ready"}
+Counts after restart:
+rooms=6, reservations=1

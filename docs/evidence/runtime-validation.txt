@@ -1,0 +1,20 @@
+Timestamp: 2026-11-11 22:42:54 +05:30
+Checkout commit: 6821308fb4a0f4872a8667a6e4cc073b7bce5d3d
+Build command: docker compose build
+Latest local API image ID:
+sha256:c97f489b77c0e5c937bbaab5ac93e0896238b52e413bf61800d62e7d40137686
+API container identity:
+uid=999(app) gid=999(app) groups=999(app)
+HTTPS health:
+{"status":"ok","version":"local"}
+HTTPS readiness:
+{"database":"available","status":"ready"}
+HTTPS availability (2026-12-11 to 2026-12-13):
+{"available_count":3,"check_in":"2026-12-11","check_out":"2026-12-13","room_type":"standard","rooms":[{"room_number":"101","room_type":"standard"},{"room_number":"102","room_type":"standard"},{"room_number":"103","room_type":"standard"}]}
+Unknown room type response:
+HTTP 400
+Compose service status:
+NAME                           IMAGE                     COMMAND                  SERVICE   CREATED         STATUS                   PORTS
+hotel_booking_devops-api-1     hotel-booking-api:local   "sh -c 'python -m ap�"   api       3 minutes ago   Up 3 minutes (healthy)   8000/tcp
+hotel_booking_devops-db-1      postgres:16.9-bookworm    "docker-entrypoint.s�"   db        12 hours ago    Up 4 minutes (healthy)   127.0.0.1:5432->5432/tcp
+hotel_booking_devops-nginx-1   nginx:1.28.0-alpine       "/docker-entrypoint.�"   nginx     3 minutes ago   Up 2 minutes (healthy)   0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp

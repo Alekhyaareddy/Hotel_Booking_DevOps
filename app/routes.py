@@ -12,6 +12,7 @@ from app.models import Reservation, Room
 
 api = Blueprint("api", __name__, url_prefix="/api")
 DATE_FORMAT = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+ROOM_TYPES = {"standard", "deluxe", "suite"}
 
 
 def parse_dates(check_in_value: object, check_out_value: object) -> tuple[date, date] | None:
@@ -47,8 +48,13 @@ def availability():
     room_type = request.args.get("room_type", "").strip()
     if values is None:
         return invalid_dates_response()
-    if not room_type:
-        return jsonify(error={"code": "invalid_room_type", "message": "room_type is required"}), 400
+    if room_type not in ROOM_TYPES:
+        return jsonify(
+            error={
+                "code": "invalid_room_type",
+                "message": "room_type must be standard, deluxe, or suite",
+            }
+        ), 400
     check_in, check_out = values
     reserved_room_ids = select(Reservation.room_id).where(
         Reservation.status == "confirmed",
@@ -84,6 +90,13 @@ def create_reservation():
     guest_name = payload["guest_name"].strip()
     guest_email = payload["guest_email"].strip().lower()
     room_type = payload["room_type"].strip()
+    if room_type not in ROOM_TYPES:
+        return jsonify(
+            error={
+                "code": "invalid_room_type",
+                "message": "room_type must be standard, deluxe, or suite",
+            }
+        ), 400
     if len(guest_name) > 120 or len(guest_email) > 254 or "@" not in guest_email:
         return jsonify(
             error={"code": "invalid_guest", "message": "Guest name or email is invalid"}

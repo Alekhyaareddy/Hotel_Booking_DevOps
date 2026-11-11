@@ -1,0 +1,16 @@
+Audit evidence | 2026-11-11 22:35 IST
+Checkout commit: 6821308fb4a0f4872a8667a6e4cc073b7bce5d3d
+
+Backup file: backups/hotel_booking_audit.dump (7,564 bytes; local ignored artifact)
+SHA256: F58270FFB5D826F02879130E527F96615D86558281EC6E5848DCA4F03528DBF8
+Backup command: docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f /tmp/hotel_booking_audit.dump'
+Restore target: hotel_booking_restore_audit_20261111 (new separate database; main database untouched)
+Restore command: docker compose exec -T db pg_restore --no-owner --no-privileges --exit-on-error -U hotel_app -d hotel_booking_restore_audit_20261111 /tmp/hotel_booking_audit.dump
+Restore command exit code: 0
+
+Observed verification output:
+Tables: public.reservations, public.rooms
+Restored row counts: rooms=6, reservations=1
+Restored overlap constraint: ex_reservation_room_dates_no_overlap
+Restored database API check: ready 200, lookup 200, reference_present True
+The API lookup used the restored reservation's stored reference and guest email; neither value is included here.

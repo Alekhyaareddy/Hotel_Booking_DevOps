@@ -1,0 +1,4 @@
+Timestamp: 2026-11-11 22:48 IST
+Command run twice: docker compose exec -T api python -m database.seed
+Run 1: Seed complete; added 0 rooms (safe to run again).
+Run 2: Seed complete; added 0 rooms (safe to run again).

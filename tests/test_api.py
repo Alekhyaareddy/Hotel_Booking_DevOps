@@ -69,6 +69,12 @@ def test_no_room_returns_conflict(client, reservation_payload):
 def test_invalid_dates_rejected(client, reservation_payload):
     bad = {**reservation_payload, "check_out": reservation_payload["check_in"]}
     assert client.post("/api/reservations", json=bad).status_code == 400
+    bad = {
+        **reservation_payload,
+        "check_in": reservation_payload["check_out"],
+        "check_out": reservation_payload["check_in"],
+    }
+    assert client.post("/api/reservations", json=bad).status_code == 400
     yesterday = (date.today() - timedelta(days=1)).isoformat()
     bad = {**reservation_payload, "check_in": yesterday}
     assert client.post("/api/reservations", json=bad).status_code == 400
@@ -137,6 +143,19 @@ def test_missing_fields_and_invalid_room_type(client, reservation_payload):
             query_string={
                 "check_in": reservation_payload["check_in"],
                 "check_out": reservation_payload["check_out"],
+            },
+        ).status_code
+        == 400
+    )
+    invalid_payload = {**reservation_payload, "room_type": "penthouse"}
+    assert client.post("/api/reservations", json=invalid_payload).status_code == 400
+    assert (
+        client.get(
+            "/api/availability",
+            query_string={
+                "check_in": reservation_payload["check_in"],
+                "check_out": reservation_payload["check_out"],
+                "room_type": "penthouse",
             },
         ).status_code
         == 400

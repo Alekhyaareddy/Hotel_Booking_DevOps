@@ -1,17 +1,16 @@
-# Assessment evidence checklist
+﻿# Assessment evidence checklist
 
-This directory contains a written record of local implementation checks. It does not contain a fabricated screenshot, GitHub Actions run, or demonstration video.
+This directory records observed local checks. It contains no fabricated screenshot, GitHub Actions run, registry publication, or demo recording.
 
-See [local validation results](local-validation.md) for the checks actually run during implementation, including their environment and limits.
+- [x] Isolated PostgreSQL API test output: [api-tests.txt](api-tests.txt) (10 passed; includes the concurrent one-success/one-conflict case).
+- [x] Local Docker build and HTTPS health/availability responses: [runtime-validation.txt](runtime-validation.txt).
+- [x] API and PostgreSQL stop/restart recovery: [recovery-validation.txt](recovery-validation.txt), [database-recovery-validation.txt](database-recovery-validation.txt).
+- [x] Reservation persistence across API restart: [persistence-validation.txt](persistence-validation.txt).
+- [x] Repeatable seed command run twice: [seed-validation.txt](seed-validation.txt); both runs added zero duplicate rooms.
+- [x] Backup checksum, separate database restore, expected rows/constraint, and restored-data API lookup: [backup-restore.txt](backup-restore.txt). The archive itself is in ignored `backups/` and is not committed.
+- [x] Local Trivy scan record from the previously built image: [trivy-summary.md](trivy-summary.md). The latest image was not rescanned during this run because Trivy was unavailable.
+- [ ] Successful GitHub Actions run URL and screenshot.
+- [ ] GHCR SHA/version tag and immutable digest.
+- [ ] 3–5 minute screen recording (the user will record it separately).
 
-- [x] Pytest output from the actual PostgreSQL-backed run
-- [x] `docker compose ps` showing service health
-- [ ] Screenshots or saved HTTP responses for health, availability, success, invalid date, and conflict
-- [ ] GitHub Actions run showing lint, tests, build, and Trivy result
-- [ ] GHCR page showing a SHA or semantic-version image tag
-- [x] Backup command output and restore result
-- [x] Restart proof showing database persistence
-- [x] Local Trivy scan result
-- [ ] 3–5 minute screen recording (MP4 or unlisted link) following `docs/demo-script.md`
-
-Redact passwords, tokens, and personal information before capturing or sharing evidence.
+The latest local test and runtime records include timestamps and the checked-out commit at the time of the run. Capture the final commit and remote CI data after pushing.

@@ -14,7 +14,14 @@ flowchart TB
     Actions --> Build[Docker build]
     Build --> Trivy[Trivy image scan]
     Trivy --> GHCR[GHCR: SHA and release tags]
+    PostgreSQL -->|pg_dump custom archive| Backup[Protected backup file]
+    Backup -->|pg_restore into isolated target| RestoreDB[(Restore verification database)]
+    RestoreDB --> RestoreCheck[Post-restore API lookup]
 ```
+
+The services run in the Docker Compose project and share a private bridge network. Compose publishes Nginx on ports 80 and 443; PostgreSQL is bound to loopback on port 5432 for local administration and testing. The API has no published host port.
+
+The database tables and constraints are detailed separately in [database-schema.md](database-schema.md).
 
 ## Request and concurrency flow
 

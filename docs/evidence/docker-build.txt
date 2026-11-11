@@ -1,0 +1,6 @@
+Local Docker build evidence | 2026-11-11 22:42 IST
+Command: docker compose build
+Observed exit code: 0 (successful)
+Image tag: hotel-booking-api:local
+Image ID: sha256:c97f489b77c0e5c937bbaab5ac93e0896238b52e413bf61800d62e7d40137686
+The image was recreated into the Compose API service. Final service health and endpoint output: runtime-validation.txt.

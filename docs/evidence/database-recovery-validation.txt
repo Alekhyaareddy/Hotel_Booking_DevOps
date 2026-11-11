@@ -1,0 +1,8 @@
+Database recovery validation | 2026-11-11 22:37 IST
+Commit: 6821308fb4a0f4872a8667a6e4cc073b7bce5d3d
+Command: docker compose stop db
+Observed: PostgreSQL Exited (0); API readiness JSON was {"database":"unavailable","status":"not_ready"}; HTTP 503.
+Command: docker compose start db
+Observed: PostgreSQL returned Up (healthy). API readiness JSON was {"database":"available","status":"ready"}; HTTP 200.
+Final Compose state: API healthy; PostgreSQL healthy; Nginx healthy.
+Database named volume remained attached; no volume removal command was used.
