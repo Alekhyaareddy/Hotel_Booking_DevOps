@@ -10,6 +10,7 @@ from logging.config import dictConfig
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 
 db = SQLAlchemy()
@@ -44,10 +45,33 @@ def configure_logging() -> None:
 def create_app(test_config: dict | None = None) -> Flask:
     configure_logging()
     app = Flask(__name__)
+    database_url_value = (
+        test_config.get("SQLALCHEMY_DATABASE_URI")
+        if test_config and test_config.get("SQLALCHEMY_DATABASE_URI")
+        else os.getenv("DATABASE_URL")
+    )
+    if not database_url_value:
+        raise RuntimeError("DATABASE_URL must be set for database connections")
+    database_url = make_url(database_url_value)
+    # Neon and many hosted providers supply a generic PostgreSQL URL. This app uses
+    # Psycopg 3, so select its explicit SQLAlchemy dialect when one is not specified.
+    if database_url.drivername in {"postgres", "postgresql"}:
+        database_url = database_url.set(drivername="postgresql+psycopg")
+
+    engine_options = {}
+    if database_url.host and database_url.host.endswith(".neon.tech"):
+        # Encrypt every Neon connection. Preserve stronger sslmode values supplied
+        # in DATABASE_URL, and add require when the connection string omits it.
+        sslmode = database_url.query.get("sslmode")
+        if sslmode not in {"require", "verify-ca", "verify-full"}:
+            database_url = database_url.set(
+                query={**database_url.query, "sslmode": "require"}
+            )
+        engine_options["pool_pre_ping"] = True
+
     app.config.update(
-        SQLALCHEMY_DATABASE_URI=os.getenv(
-            "DATABASE_URL", "postgresql+psycopg://hotel_app:hotel_app@localhost:5432/hotel_booking"
-        ),
+        SQLALCHEMY_DATABASE_URI=database_url,
+        SQLALCHEMY_ENGINE_OPTIONS=engine_options,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JSON_SORT_KEYS=True,
         APP_VERSION=os.getenv("APP_VERSION", "dev"),
