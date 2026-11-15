@@ -44,6 +44,63 @@ def invalid_dates_response():
 
 @api.get("/availability")
 def availability():
+    """Find rooms available for a room type and date range.
+    ---
+    tags:
+      - Availability
+    parameters:
+      - name: check_in
+        in: query
+        type: string
+        format: date
+        required: true
+        description: Arrival date in YYYY-MM-DD format; today or a future date.
+      - name: check_out
+        in: query
+        type: string
+        format: date
+        required: true
+        description: Departure date in YYYY-MM-DD format; must be after check_in.
+      - name: room_type
+        in: query
+        type: string
+        enum: [standard, deluxe, suite]
+        required: true
+    responses:
+      200:
+        description: Available rooms matching the requested type and dates.
+        schema:
+          $ref: '#/definitions/AvailabilityResponse'
+        examples:
+          application/json:
+            check_in: '2030-06-10'
+            check_out: '2030-06-12'
+            room_type: standard
+            available_count: 1
+            rooms:
+              - room_number: '101'
+                room_type: standard
+      400:
+        description: Dates are invalid or room_type is unsupported.
+        schema:
+          $ref: '#/definitions/ErrorResponse'
+        examples:
+          application/json:
+            error:
+              code: invalid_dates
+              message: >-
+                Use YYYY-MM-DD dates; check_in cannot be in the past and check_out
+                must be after check_in
+      500:
+        description: An unexpected server error occurred.
+        schema:
+          $ref: '#/definitions/ErrorResponse'
+        examples:
+          application/json:
+            error:
+              code: internal_error
+              message: Internal server error
+    """
     values = parse_dates(request.args.get("check_in"), request.args.get("check_out"))
     room_type = request.args.get("room_type", "").strip()
     if values is None:
@@ -77,6 +134,64 @@ def availability():
 
 @api.post("/reservations")
 def create_reservation():
+    """Create a confirmed reservation for the first available matching room.
+    ---
+    tags:
+      - Reservations
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: reservation
+        required: true
+        description: Guest details, room type, and stay dates.
+        schema:
+          $ref: '#/definitions/ReservationRequest'
+    responses:
+      201:
+        description: Reservation created.
+        schema:
+          $ref: '#/definitions/ReservationCreated'
+        examples:
+          application/json:
+            booking_reference: HB-ABC123XYZ9
+            status: confirmed
+            room_number: '101'
+            room_type: standard
+            check_in: '2030-06-10'
+            check_out: '2030-06-12'
+      400:
+        description: The JSON body, required fields, guest details, room type, or dates are invalid.
+        schema:
+          $ref: '#/definitions/ErrorResponse'
+        examples:
+          application/json:
+            error:
+              code: invalid_dates
+              message: >-
+                Use YYYY-MM-DD dates; check_in cannot be in the past and check_out
+                must be after check_in
+      409:
+        description: No matching room is available, or a concurrent request booked it first.
+        schema:
+          $ref: '#/definitions/ErrorResponse'
+        examples:
+          application/json:
+            error:
+              code: no_availability
+              message: No room is available for those dates
+      500:
+        description: An unexpected server or integrity error occurred.
+        schema:
+          $ref: '#/definitions/ErrorResponse'
+        examples:
+          application/json:
+            error:
+              code: internal_error
+              message: Internal server error
+    """
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify(error={"code": "invalid_json", "message": "A JSON object is required"}), 400
@@ -156,7 +271,63 @@ def create_reservation():
 
 @api.post("/reservations/lookup")
 def get_reservation():
-    """Look up a booking with its reference and the guest email used to create it."""
+    """Look up a reservation using its reference and the guest email used to create it.
+    ---
+    tags:
+      - Reservations
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: lookup
+        required: true
+        description: Booking reference and matching guest email.
+        schema:
+          $ref: '#/definitions/ReservationLookupRequest'
+    responses:
+      200:
+        description: Matching reservation details.
+        schema:
+          $ref: '#/definitions/ReservationLookupResponse'
+        examples:
+          application/json:
+            booking_reference: HB-ABC123XYZ9
+            status: confirmed
+            guest_name: Ada Lovelace
+            room_number: '101'
+            room_type: standard
+            check_in: '2030-06-10'
+            check_out: '2030-06-12'
+      400:
+        description: The JSON body, booking reference, or guest email is missing or invalid.
+        schema:
+          $ref: '#/definitions/ErrorResponse'
+        examples:
+          application/json:
+            error:
+              code: missing_reference
+              message: Booking reference is required
+      404:
+        description: No reservation matches both the reference and guest email.
+        schema:
+          $ref: '#/definitions/ErrorResponse'
+        examples:
+          application/json:
+            error:
+              code: reservation_not_found
+              message: Booking not found
+      500:
+        description: An unexpected server error occurred.
+        schema:
+          $ref: '#/definitions/ErrorResponse'
+        examples:
+          application/json:
+            error:
+              code: internal_error
+              message: Internal server error
+    """
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify(error={"code": "invalid_json", "message": "A JSON object is required"}), 400

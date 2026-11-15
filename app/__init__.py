@@ -7,7 +7,8 @@ import time
 from datetime import UTC, datetime
 from logging.config import dictConfig
 
-from flask import Flask, jsonify
+from flasgger import Swagger
+from flask import Flask, jsonify, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
@@ -64,9 +65,7 @@ def create_app(test_config: dict | None = None) -> Flask:
         # in DATABASE_URL, and add require when the connection string omits it.
         sslmode = database_url.query.get("sslmode")
         if sslmode not in {"require", "verify-ca", "verify-full"}:
-            database_url = database_url.set(
-                query={**database_url.query, "sslmode": "require"}
-            )
+            database_url = database_url.set(query={**database_url.query, "sslmode": "require"})
         engine_options["pool_pre_ping"] = True
 
     app.config.update(
@@ -84,6 +83,182 @@ def create_app(test_config: dict | None = None) -> Flask:
     from app.routes import api
 
     app.register_blueprint(api)
+    Swagger(
+        app,
+        config={
+            "headers": [],
+            "specs": [
+                {
+                    "endpoint": "apispec_1",
+                    "route": "/apispec_1.json",
+                    "rule_filter": lambda rule: rule.rule.startswith("/api/"),
+                    "model_filter": lambda _tag: True,
+                }
+            ],
+            "static_url_path": "/flasgger_static",
+            "swagger_ui": True,
+            "specs_route": "/docs",
+            "uiversion": 3,
+        },
+        template={
+            "info": {
+                "title": "Hotel Booking API",
+                "description": (
+                    "Check room availability, create reservations, and retrieve "
+                    "a reservation using its booking reference and guest email."
+                ),
+                "version": app.config["APP_VERSION"],
+            },
+            "basePath": "/",
+            "consumes": ["application/json"],
+            "produces": ["application/json"],
+            "tags": [
+                {
+                    "name": "Availability",
+                    "description": "Find rooms available for a date range.",
+                },
+                {
+                    "name": "Reservations",
+                    "description": "Create and look up guest reservations.",
+                },
+            ],
+            "definitions": {
+                "ErrorResponse": {
+                    "type": "object",
+                    "required": ["error"],
+                    "properties": {
+                        "error": {
+                            "type": "object",
+                            "required": ["code", "message"],
+                            "properties": {
+                                "code": {"type": "string"},
+                                "message": {"type": "string"},
+                            },
+                        }
+                    },
+                },
+                "RoomAvailability": {
+                    "type": "object",
+                    "required": ["room_number", "room_type"],
+                    "properties": {
+                        "room_number": {"type": "string", "example": "101"},
+                        "room_type": {"type": "string", "example": "standard"},
+                    },
+                },
+                "AvailabilityResponse": {
+                    "type": "object",
+                    "required": [
+                        "check_in",
+                        "check_out",
+                        "room_type",
+                        "available_count",
+                        "rooms",
+                    ],
+                    "properties": {
+                        "check_in": {"type": "string", "format": "date"},
+                        "check_out": {"type": "string", "format": "date"},
+                        "room_type": {"type": "string"},
+                        "available_count": {"type": "integer", "minimum": 0},
+                        "rooms": {
+                            "type": "array",
+                            "items": {"$ref": "#/definitions/RoomAvailability"},
+                        },
+                    },
+                },
+                "ReservationRequest": {
+                    "type": "object",
+                    "required": [
+                        "guest_name",
+                        "guest_email",
+                        "room_type",
+                        "check_in",
+                        "check_out",
+                    ],
+                    "properties": {
+                        "guest_name": {
+                            "type": "string",
+                            "maxLength": 120,
+                            "example": "Ada Lovelace",
+                        },
+                        "guest_email": {
+                            "type": "string",
+                            "format": "email",
+                            "maxLength": 254,
+                            "example": "ada@example.test",
+                        },
+                        "room_type": {
+                            "type": "string",
+                            "enum": ["standard", "deluxe", "suite"],
+                        },
+                        "check_in": {"type": "string", "format": "date"},
+                        "check_out": {"type": "string", "format": "date"},
+                    },
+                },
+                "ReservationCreated": {
+                    "type": "object",
+                    "required": [
+                        "booking_reference",
+                        "status",
+                        "room_number",
+                        "room_type",
+                        "check_in",
+                        "check_out",
+                    ],
+                    "properties": {
+                        "booking_reference": {
+                            "type": "string",
+                            "example": "HB-ABC123XYZ9",
+                        },
+                        "status": {"type": "string", "example": "confirmed"},
+                        "room_number": {"type": "string", "example": "101"},
+                        "room_type": {"type": "string", "example": "standard"},
+                        "check_in": {"type": "string", "format": "date"},
+                        "check_out": {"type": "string", "format": "date"},
+                    },
+                },
+                "ReservationLookupRequest": {
+                    "type": "object",
+                    "required": ["booking_reference", "guest_email"],
+                    "properties": {
+                        "booking_reference": {
+                            "type": "string",
+                            "example": "HB-ABC123XYZ9",
+                        },
+                        "guest_email": {
+                            "type": "string",
+                            "format": "email",
+                            "example": "ada@example.test",
+                        },
+                    },
+                },
+                "ReservationLookupResponse": {
+                    "type": "object",
+                    "required": [
+                        "booking_reference",
+                        "status",
+                        "guest_name",
+                        "room_number",
+                        "room_type",
+                        "check_in",
+                        "check_out",
+                    ],
+                    "properties": {
+                        "booking_reference": {"type": "string"},
+                        "status": {"type": "string"},
+                        "guest_name": {"type": "string"},
+                        "room_number": {"type": "string"},
+                        "room_type": {"type": "string"},
+                        "check_in": {"type": "string", "format": "date"},
+                        "check_out": {"type": "string", "format": "date"},
+                    },
+                },
+            },
+        },
+    )
+
+    @app.get("/docs/")
+    def docs_trailing_slash_redirect():
+        return redirect("/docs", code=308)
 
     @app.get("/health")
     def health():
